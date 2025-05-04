@@ -171,14 +171,14 @@ const EventSchema: Schema = new Schema(
   }
 );
 
-// Add text index for search functionality
-// EventSchema.index(
-//   { 
-//     title: 'text', 
-//     description: 'text', 
-//     tags: 'text',
-//     collegeName: 'text'
-//   }
-// );
+Add text index for search functionality
+EventSchema.index(
+  { 
+    title: 'text', 
+    description: 'text', 
+    tags: 'text',
+    collegeName: 'text'
+  }
+);
 
 export const Event: Model<Event> = mongoose.models.Event || mongoose.model<Event>('Event', EventSchema);
