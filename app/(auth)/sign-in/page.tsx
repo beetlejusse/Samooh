@@ -37,7 +37,7 @@ export default function SignIn() {
         setError(result.error);
         setIsLoading(false);
       } else {
-        router.push('/'); 
+        router.push('/dashboard'); 
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -135,7 +135,6 @@ export default function SignIn() {
         </Link>
       </div>
       
-      {/* Image Section - Hidden on mobile, visible on larger screens */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-[#c94bc7] to-[#6b4ee6] items-center justify-center">
         <div className="text-white text-center max-w-lg px-8">
           <h2 className="text-4xl font-bold mb-4">Connect, Learn & Grow at College Events</h2>
