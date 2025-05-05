@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, model, models } from 'mongoose';
 
 // Define the User interface
 export interface User extends Document {
@@ -6,7 +6,7 @@ export interface User extends Document {
   name: string;
   email: string;
   password: string;
-  username?: string;
+  username: string;
 
   // Profile Information
   avatar?: string;
@@ -46,7 +46,7 @@ export interface User extends Document {
 }
 
 // Define the User schema
-const UserSchema: Schema = new Schema(
+const UserSchema: Schema = new Schema<User>(
   {
     // Basic Information
     name: {
@@ -73,33 +73,23 @@ const UserSchema: Schema = new Schema(
       trim: true,
     },
 
-    avatar: {
-      type: String,
-    },
+    avatar: String,
     bio: {
       type: String,
       maxlength: 500,
     },
-    phoneNumber: {
-      type: String,
-    },
+    phoneNumber: String,
     dateOfBirth: {
       type: Date,
     },
     gender: {
       type: String,
-      enum: ['male', 'female', 'non-binary', 'prefer-not-to-say'],
+      enum: ['male', 'female', 'other'],
     },
 
-    collegeName: {
-      type: String,
-    },
-    department: {
-      type: String,
-    },
-    graduationYear: {
-      type: Number,
-    },
+    collegeName: String,
+    department: String,
+    graduationYear: Number,
     skills: [
       {
         type: String,
@@ -147,4 +137,4 @@ const UserSchema: Schema = new Schema(
 );
 
 // Define the User model
-export const userModel: Model<User> = mongoose.models.User || mongoose.model<User>('User', UserSchema);
+export const userModel = models.User || model<User>('User', UserSchema);
