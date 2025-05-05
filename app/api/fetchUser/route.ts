@@ -1,44 +1,53 @@
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import dbConnect from "@/lib/db";
-import { userModel } from "@/models/User.model";
+import {userModel} from "@/models/User.model";
+import { NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+
+export async function GET(req: Request) {
+  const session = await auth();
   try {
-    const session = await auth();
+  if (!session || !session.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    // Check if user is authenticated
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Unauthorized: Please sign in to access this resource" },
-        { status: 401 }
-      );
-    }
-
-    // Connect to database
     await dbConnect();
+    const user = await userModel.findOne({ email: session.user.email });
 
-    // Get user ID from session
-    const userId = session.user.id;
-
-    // Find user in database (excluding password)
-    const user = await userModel.findById(userId).select("-password");
-
-    // Check if user exists
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Return user data
     return NextResponse.json({ message: "User fetched", user });
-  } catch (error: any) {
-    console.error("Error fetching user:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch user details" },
-      { status: 500 }
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session || !session.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await dbConnect();
+    const data = await req.json();
+
+    const updatedUser = await userModel.findOneAndUpdate(
+      { email: session.user.email },
+      { $set: data },
+      { new: true }
     );
+
+    if (!updatedUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: "User updated", user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }
