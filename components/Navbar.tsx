@@ -1,13 +1,21 @@
-"use client"
+"use client";
 
-import React from "react"
-import Link from "next/link"
-import { useState, useEffect } from "react"
-import { Sparkles, Menu, X, ChevronDown, User, LogOut, Settings } from "lucide-react"
-import { signOut } from "@/lib/auth"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import axios from "axios"
+import React from "react";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import {
+  Sparkles,
+  Menu,
+  X,
+  ChevronDown,
+  User,
+  LogOut,
+  Settings,
+} from "lucide-react";
+import { signOut } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import axios from "axios";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,17 +33,17 @@ interface UserType {
 }
 
 export function Navbar() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<UserType>();
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -43,7 +51,7 @@ export function Navbar() {
         const res = await axios.get("/api/fetchUser");
         setUser(res.data.user);
         console.log("User data fetched:", res.data.user);
-        console.log("helllo")
+        console.log("helllo");
       } catch (error) {
         console.error("Failed to fetch user", error);
       }
@@ -53,11 +61,15 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className={cn("fixed top-6 left-0 right-0 z-50 transition-all duration-500 mx-auto max-w-6xl px-4")}>
+    <header
+      className={cn(
+        "fixed top-6 left-0 right-0 z-50 transition-all duration-500 mx-auto max-w-6xl px-4"
+      )}
+    >
       <div
         className={cn(
           "bg-white/40 backdrop-blur-xl rounded-2xl shadow-lg border border-white/30 transition-all duration-500",
-          scrolled ? "bg-white/60 shadow-md" : "",
+          scrolled ? "bg-white/60 shadow-md" : ""
         )}
       >
         <div className="flex h-16 items-center justify-between px-6">
@@ -107,43 +119,60 @@ export function Navbar() {
 
           <div className="hidden md:flex items-center gap-3">
             {user ? (
-            //   <DropdownMenu>
-            //   <DropdownMenuTrigger asChild>
-            //     <Button variant="ghost" className="relative h-8 w-8 rounded-full transition-all duration-300 hover:scale-110 hover:shadow-glow">
-            //       <Avatar className="h-8 w-8 glow-border">
-            //         <AvatarImage
-            //           src={user?.avatar || "/placeholder.svg?height=32&width=32"}
-            //           alt={user?.username || "User"}
-            //         />
-            //         <AvatarFallback>
-            //           {user?.username?.slice(0, 2).toUpperCase() || "NA"}
-            //         </AvatarFallback>
-            //       </Avatar>
-            //     </Button>
-            //   </DropdownMenuTrigger>
-            //   <DropdownMenuContent className="w-56 bg-[#111827] border-white/10 text-white animate-fade-in-down glow-border" align="end" forceMount>
-            //     <DropdownMenuLabel className="font-normal">
-            //       <div className="flex flex-col space-y-1">
-            //         <p className="text-sm font-medium leading-none">{user?.username || "Loading..."}</p>
-            //         <p className="text-xs leading-none text-white/60">{user?.email || "Loading..."}</p>
-            //       </div>
-            //     </DropdownMenuLabel>
-            //     <DropdownMenuSeparator className="bg-white/10" />
-            //     <DropdownMenuItem asChild className="hover:bg-white/10 focus:bg-white/10 transition-all duration-300 hover:translate-x-1 hover:glow-text">
-            //       <Link href="/profile">
-            //         <User className="mr-2 h-4 w-4" />
-            //         <span>Profile</span>
-            //       </Link>
-            //     </DropdownMenuItem>
-            //     <DropdownMenuItem onClick={() => signOut()} className="hover:bg-white/10 focus:bg-white/10 transition-all duration-300 hover:translate-x-1 hover:glow-text">
-            //       <LogOut className="mr-2 h-4 w-4" />
-            //       <span>Log out</span>
-            //     </DropdownMenuItem>
-            //   </DropdownMenuContent>
-            // </DropdownMenu>
-
-              <p>hello</p>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full transition-all duration-300 hover:scale-100 hover:shadow-glow"
+                  >
+                    {user?.avatar ? (
+                      <Avatar className="h-10 w-10 glow-border">
+                        <AvatarImage
+                          src={
+                            user?.avatar ||
+                            "/placeholder.svg?height=32&width=32"
+                          }
+                          alt={user?.username || "User"}
+                        />
+                      </Avatar>
+                    ) : (
+                      <Avatar>
+                        <AvatarFallback className="text-white bg-gradient-to-br from-pink-500 to-violet-500">
+                          {user?.username?.slice(0, 2).toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-56 bg-[#111827] border-white/10 text-white animate-fade-in-down glow-border"
+                  align="end"
+                  forceMount
+                >
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {user?.username || "Loading..."}
+                      </p>
+                      <p className="text-xs leading-none text-white/60">
+                        {user?.email || "Loading..."}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem
+                    asChild
+                    className="hover:bg-white/10 focus:bg-white/10 transition-all duration-300 hover:translate-x-1 hover:glow-text"
+                  >
+                    <Link href="/dashboard">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
+              // <p>hello <span className="font-bold uppercase">{user.username}</span></p>
               <>
                 <Link href={"/sign-in"}>
                   <Button
@@ -174,7 +203,9 @@ export function Navbar() {
       <div
         className={cn(
           "fixed inset-x-4 top-24 bg-white/60 backdrop-blur-xl z-40 rounded-2xl shadow-lg border border-white/30 md:hidden transition-all duration-500 ease-in-out",
-          isOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-10 pointer-events-none",
+          isOpen
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-10 pointer-events-none"
         )}
       >
         <nav className="flex flex-col gap-2 p-4">
@@ -199,40 +230,40 @@ export function Navbar() {
 
           <div className="mt-4 flex flex-col gap-3 p-2">
             {user ? (
-            //   <DropdownMenu>
-            //   <DropdownMenuTrigger asChild>
-            //     <Button variant="ghost" className="relative h-8 w-8 rounded-full transition-all duration-300 hover:scale-110 hover:shadow-glow">
-            //       <Avatar className="h-8 w-8 glow-border">
-            //         <AvatarImage
-            //           src={user?.avatar || "/placeholder.svg?height=32&width=32"}
-            //           alt={user?.username || "User"}
-            //         />
-            //         <AvatarFallback>
-            //           {user?.username?.slice(0, 2).toUpperCase() || "NA"}
-            //         </AvatarFallback>
-            //       </Avatar>
-            //     </Button>
-            //   </DropdownMenuTrigger>
-            //   <DropdownMenuContent className="w-56 bg-[#111827] border-white/10 text-white animate-fade-in-down glow-border" align="end" forceMount>
-            //     <DropdownMenuLabel className="font-normal">
-            //       <div className="flex flex-col space-y-1">
-            //         <p className="text-sm font-medium leading-none">{user?.username || "Loading..."}</p>
-            //         <p className="text-xs leading-none text-white/60">{user?.email || "Loading..."}</p>
-            //       </div>
-            //     </DropdownMenuLabel>
-            //     <DropdownMenuSeparator className="bg-white/10" />
-            //     <DropdownMenuItem asChild className="hover:bg-white/10 focus:bg-white/10 transition-all duration-300 hover:translate-x-1 hover:glow-text">
-            //       <Link href="/profile">
-            //         <User className="mr-2 h-4 w-4" />
-            //         <span>Profile</span>
-            //       </Link>
-            //     </DropdownMenuItem>
-            //     <DropdownMenuItem onClick={() => signOut()} className="hover:bg-white/10 focus:bg-white/10 transition-all duration-300 hover:translate-x-1 hover:glow-text">
-            //       <LogOut className="mr-2 h-4 w-4" />
-            //       <span>Log out</span>
-            //     </DropdownMenuItem>
-            //   </DropdownMenuContent>
-            // </DropdownMenu>
+              //   <DropdownMenu>
+              //   <DropdownMenuTrigger asChild>
+              //     <Button variant="ghost" className="relative h-8 w-8 rounded-full transition-all duration-300 hover:scale-110 hover:shadow-glow">
+              //       <Avatar className="h-8 w-8 glow-border">
+              //         <AvatarImage
+              //           src={user?.avatar || "/placeholder.svg?height=32&width=32"}
+              //           alt={user?.username || "User"}
+              //         />
+              //         <AvatarFallback>
+              //           {user?.username?.slice(0, 2).toUpperCase() || "NA"}
+              //         </AvatarFallback>
+              //       </Avatar>
+              //     </Button>
+              //   </DropdownMenuTrigger>
+              //   <DropdownMenuContent className="w-56 bg-[#111827] border-white/10 text-white animate-fade-in-down glow-border" align="end" forceMount>
+              //     <DropdownMenuLabel className="font-normal">
+              //       <div className="flex flex-col space-y-1">
+              //         <p className="text-sm font-medium leading-none">{user?.username || "Loading..."}</p>
+              //         <p className="text-xs leading-none text-white/60">{user?.email || "Loading..."}</p>
+              //       </div>
+              //     </DropdownMenuLabel>
+              //     <DropdownMenuSeparator className="bg-white/10" />
+              //     <DropdownMenuItem asChild className="hover:bg-white/10 focus:bg-white/10 transition-all duration-300 hover:translate-x-1 hover:glow-text">
+              //       <Link href="/profile">
+              //         <User className="mr-2 h-4 w-4" />
+              //         <span>Profile</span>
+              //       </Link>
+              //     </DropdownMenuItem>
+              //     <DropdownMenuItem onClick={() => signOut()} className="hover:bg-white/10 focus:bg-white/10 transition-all duration-300 hover:translate-x-1 hover:glow-text">
+              //       <LogOut className="mr-2 h-4 w-4" />
+              //       <span>Log out</span>
+              //     </DropdownMenuItem>
+              //   </DropdownMenuContent>
+              // </DropdownMenu>
 
               <p>hello</p>
             ) : (
@@ -252,10 +283,18 @@ export function Navbar() {
         </nav>
       </div>
     </header>
-  )
+  );
 }
 
-function NavLink({ href, children, isActive }: { href: string; children: React.ReactNode; isActive?: boolean }) {
+function NavLink({
+  href,
+  children,
+  isActive,
+}: {
+  href: string;
+  children: React.ReactNode;
+  isActive?: boolean;
+}) {
   return (
     <Link
       href={href}
@@ -263,15 +302,23 @@ function NavLink({ href, children, isActive }: { href: string; children: React.R
         "px-4 py-2 rounded-full transition-all duration-300",
         isActive
           ? "bg-white/70 text-gray-900 font-medium shadow-sm"
-          : "text-gray-600 hover:text-gray-900 hover:bg-white/50",
+          : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
       )}
     >
       {children}
     </Link>
-  )
+  );
 }
 
-function MobileNavLink({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: () => void }) {
+function MobileNavLink({
+  href,
+  children,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
     <Link
       href={href}
@@ -280,5 +327,5 @@ function MobileNavLink({ href, children, onClick }: { href: string; children: Re
     >
       {children}
     </Link>
-  )
+  );
 }
