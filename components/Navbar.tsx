@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   Sparkles,
   Menu,
@@ -12,7 +12,6 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
-import { signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import axios from "axios";
@@ -36,6 +35,7 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<UserType>();
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -83,12 +83,15 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <NavLink href="/" isActive>
+            <NavLink href="/" activePath={pathname}>
               Home
             </NavLink>
-            <NavLink href="/events">Events</NavLink>
-            <NavLink href="/submitEvent">Submit Event</NavLink>
-
+            <NavLink href="/events" activePath={pathname}>
+              Events
+            </NavLink>
+            <NavLink href="/submitEvent" activePath={pathname}>
+              Submit Event
+            </NavLink>
             <div className="relative group">
               <button className="flex items-center gap-1 px-4 py-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-white/50 transition-colors">
                 <span>Resources</span>
@@ -172,7 +175,6 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              // <p>hello <span className="font-bold uppercase">{user.username}</span></p>
               <>
                 <Link href={"/sign-in"}>
                   <Button
@@ -209,62 +211,27 @@ export function Navbar() {
         )}
       >
         <nav className="flex flex-col gap-2 p-4">
-          <MobileNavLink href="/" onClick={() => setIsOpen(false)}>
+          <MobileNavLink href="/" onClick={() => setIsOpen(false)} activePath={pathname}>
             Home
           </MobileNavLink>
-          <MobileNavLink href="/events" onClick={() => setIsOpen(false)}>
+          <MobileNavLink href="/events" onClick={() => setIsOpen(false)} activePath={pathname}>
             Events
           </MobileNavLink>
-          <MobileNavLink href="/submitEvent" onClick={() => setIsOpen(false)}>
+          <MobileNavLink href="/submitEvent" onClick={() => setIsOpen(false)} activePath={pathname}>
             Submit Event
           </MobileNavLink>
-          <MobileNavLink href="/dashboard" onClick={() => setIsOpen(false)}>
+          <MobileNavLink href="/dashboard" onClick={() => setIsOpen(false)} activePath={pathname}>
             Dashboard
           </MobileNavLink>
-          <MobileNavLink href="/FAQ" onClick={() => setIsOpen(false)}>
+          <MobileNavLink href="/FAQ" onClick={() => setIsOpen(false)} activePath={pathname}>
             FAQ
           </MobileNavLink>
-          <MobileNavLink href="/support" onClick={() => setIsOpen(false)}>
+          <MobileNavLink href="/support" onClick={() => setIsOpen(false)} activePath={pathname}>
             Support
           </MobileNavLink>
 
           <div className="mt-4 flex flex-col gap-3 p-2">
             {user ? (
-              //   <DropdownMenu>
-              //   <DropdownMenuTrigger asChild>
-              //     <Button variant="ghost" className="relative h-8 w-8 rounded-full transition-all duration-300 hover:scale-110 hover:shadow-glow">
-              //       <Avatar className="h-8 w-8 glow-border">
-              //         <AvatarImage
-              //           src={user?.avatar || "/placeholder.svg?height=32&width=32"}
-              //           alt={user?.username || "User"}
-              //         />
-              //         <AvatarFallback>
-              //           {user?.username?.slice(0, 2).toUpperCase() || "NA"}
-              //         </AvatarFallback>
-              //       </Avatar>
-              //     </Button>
-              //   </DropdownMenuTrigger>
-              //   <DropdownMenuContent className="w-56 bg-[#111827] border-white/10 text-white animate-fade-in-down glow-border" align="end" forceMount>
-              //     <DropdownMenuLabel className="font-normal">
-              //       <div className="flex flex-col space-y-1">
-              //         <p className="text-sm font-medium leading-none">{user?.username || "Loading..."}</p>
-              //         <p className="text-xs leading-none text-white/60">{user?.email || "Loading..."}</p>
-              //       </div>
-              //     </DropdownMenuLabel>
-              //     <DropdownMenuSeparator className="bg-white/10" />
-              //     <DropdownMenuItem asChild className="hover:bg-white/10 focus:bg-white/10 transition-all duration-300 hover:translate-x-1 hover:glow-text">
-              //       <Link href="/profile">
-              //         <User className="mr-2 h-4 w-4" />
-              //         <span>Profile</span>
-              //       </Link>
-              //     </DropdownMenuItem>
-              //     <DropdownMenuItem onClick={() => signOut()} className="hover:bg-white/10 focus:bg-white/10 transition-all duration-300 hover:translate-x-1 hover:glow-text">
-              //       <LogOut className="mr-2 h-4 w-4" />
-              //       <span>Log out</span>
-              //     </DropdownMenuItem>
-              //   </DropdownMenuContent>
-              // </DropdownMenu>
-
               <p>hello</p>
             ) : (
               <>
@@ -286,15 +253,17 @@ export function Navbar() {
   );
 }
 
+// NavLink for desktop navigation with dynamic active state
 function NavLink({
   href,
   children,
-  isActive,
+  activePath,
 }: {
   href: string;
   children: React.ReactNode;
-  isActive?: boolean;
+  activePath: string;
 }) {
+  const isActive = activePath === href;
   return (
     <Link
       href={href}
@@ -310,19 +279,28 @@ function NavLink({
   );
 }
 
+// MobileNavLink for mobile navigation with dynamic active state
 function MobileNavLink({
   href,
   children,
   onClick,
+  activePath,
 }: {
   href: string;
   children: React.ReactNode;
   onClick?: () => void;
+  activePath: string;
 }) {
+  const isActive = activePath === href;
   return (
     <Link
       href={href}
-      className="py-3 px-4 text-base font-medium text-gray-700 hover:text-pink-600 hover:bg-pink-50/50 rounded-xl transition-all duration-300"
+      className={cn(
+        "py-3 px-4 text-base font-medium rounded-xl transition-all duration-300",
+        isActive
+          ? "text-pink-600 bg-pink-50/50"
+          : "text-gray-700 hover:text-pink-600 hover:bg-pink-50/50"
+      )}
       onClick={onClick}
     >
       {children}
