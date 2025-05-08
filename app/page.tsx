@@ -149,7 +149,7 @@ export default function Home() {
                     variant="outline"
                     className="rounded-full border-pink-200 text-gray-700 hover:bg-pink-50 hover:text-pink-600 px-6 py-6 h-auto text-base"
                   >
-                    <Link href="/submit">Submit Your Event</Link>
+                    <Link href="/submitEvent">Submit Your Event</Link>
                   </Button>
                 </div>
 
