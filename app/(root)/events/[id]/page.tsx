@@ -3,6 +3,8 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Calendar, MapPin, Clock, Users, Share2, Bookmark, ArrowLeft } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,21 +12,140 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export default function EventPage({ params }: { params: { id: string } }) {
-  const id = Number.parseInt(params.id)
-  const eventType = id % 3 === 0 ? "Hackathon" : id % 3 === 1 ? "Workshop" : "Tech Talk"
-  const eventName =
-    id % 3 === 0 ? `Hack the Future ${id}` : id % 3 === 1 ? `Web Dev Workshop ${id}` : `AI Revolution Talk ${id}`
-  const eventLocation =
-    id % 4 === 0 ? "MIT Campus" : id % 4 === 1 ? "Stanford Campus" : id % 4 === 2 ? "Harvard Campus" : "UC Berkeley"
-  const eventDate = `${10 + id} March, 2024`
-  const eventTime = "10:00 AM - 6:00 PM"
-  const eventDescription =
-    id % 3 === 0
-      ? "Join us for a 24-hour hackathon where you'll build innovative solutions to real-world problems. Work with a team to create a project that addresses challenges in healthcare, education, sustainability, or social impact. You'll have access to mentors, workshops, and resources to help you bring your ideas to life."
-      : id % 3 === 1
-        ? "Learn the latest web development technologies in this hands-on workshop. We'll cover modern frontend frameworks, backend development, and deployment strategies. By the end of this workshop, you'll have built a full-stack web application and gained practical skills that you can apply to your own projects."
-        : "Discover how AI is transforming industries in this insightful tech talk. Our speakers will discuss the latest advancements in artificial intelligence, machine learning, and their applications in various fields. You'll learn about cutting-edge research, ethical considerations, and future trends in AI technology."
+interface Event {
+  _id: string;
+  title: string;
+  eventType: 'hackathon' | 'workshop' | 'tech-talk' | 'networking' | 'conference' | 'other';
+  description: string;
+  format: 'in-person' | 'virtual' | 'hybrid';
+  imageUrl: string;
+  tags: string[];
+  venue?: {
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode: string;
+  };
+  schedule: {
+    startDate: string;
+    endDate: string;
+    startTime: string;
+    endTime: string;
+    timezone: string;
+  };
+  capacity?: number;
+  organizer: {
+    name: string;
+    email: string;
+    phone?: string;
+    collegeName: string;
+    website?: string;
+    socialMedia?: {
+      instagram?: string;
+      twitter?: string;
+    };
+  };
+  additionalInfo?: string;
+  status: 'draft' | 'published' | 'cancelled';
+}
+
+export default function EventPage() {
+  const params = useParams();
+  const eventId = params.id as string;
+  
+  const [event, setEvent] = useState<Event | null>(null);
+  const [similarEvents, setSimilarEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEvent = async () => {
+      setLoading(true);
+      try {
+        // Fetch the specific event
+        const response = await fetch(`/api/events/${eventId}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch event: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setEvent(data.event);
+        
+        // Fetch similar events (same event type)
+        const eventType = data.event.eventType;
+        const similarResponse = await fetch(`/api/fetchEvents?eventType=${eventType}&limit=3`);
+        
+        if (similarResponse.ok) {
+          const similarData = await similarResponse.json();
+          // Filter out the current event
+          const filteredEvents = similarData.events.filter((e: Event) => e._id !== eventId);
+          setSimilarEvents(filteredEvents.slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Error fetching event:", err);
+        setError("Failed to load event details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (eventId) {
+      fetchEvent();
+    }
+  }, [eventId]);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const getBadgeVariant = (eventType: string): "default" | "secondary" | "outline" | "destructive" => {
+    switch (eventType) {
+      case 'hackathon':
+        return 'default';
+      case 'workshop':
+        return 'secondary';
+      case 'tech-talk':
+        return 'outline';
+      case 'networking':
+        return 'destructive';
+      case 'conference':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col pt-20">
+        <main className="flex-1">
+          <div className="container py-8 flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <div className="flex min-h-screen flex-col pt-20">
+        <main className="flex-1">
+          <div className="container py-8 text-center">
+            <h1 className="text-2xl font-bold">Event not found</h1>
+            <p className="text-muted-foreground mt-2">{error || "The event you're looking for doesn't exist"}</p>
+            <Button asChild className="mt-4">
+              <Link href="/events">Back to Events</Link>
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col pt-20">
@@ -41,37 +162,39 @@ export default function EventPage({ params }: { params: { id: string } }) {
               <div>
                 <div className="relative aspect-video w-full overflow-hidden rounded-xl">
                   <Image
-                    src={`/placeholder.svg?height=600&width=1200&text=${eventName}`}
+                    src={event.imageUrl || `/placeholder.svg?height=600&width=1200&text=${encodeURIComponent(event.title)}`}
                     width={1200}
                     height={600}
-                    alt={eventName}
+                    alt={event.title}
                     className="h-full w-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-6">
-                    <Badge variant={id % 3 === 0 ? "default" : id % 3 === 1 ? "secondary" : "outline"} className="mb-2">
-                      {eventType}
+                    <Badge variant={getBadgeVariant(event.eventType)} className="mb-2">
+                      {event.eventType}
                     </Badge>
-                    <h1 className="text-2xl font-bold text-white md:text-4xl">{eventName}</h1>
+                    <h1 className="text-2xl font-bold text-white md:text-4xl">{event.title}</h1>
                   </div>
                 </div>
                 <div className="mt-6 flex flex-wrap gap-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>{eventDate}</span>
+                    <span>{formatDate(event.schedule.startDate)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />
-                    <span>{eventTime}</span>
+                    <span>{`${event.schedule.startTime} - ${event.schedule.endTime}`}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="h-4 w-4" />
-                    <span>{eventLocation}</span>
+                    <span>{event.venue?.name || "Online"}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>{`${50 + id * 10} Attendees`}</span>
-                  </div>
+                  {event.capacity && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span>{`${event.capacity} Capacity`}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-6 flex gap-2">
                   <Button size="lg" className="gap-2">
@@ -101,10 +224,10 @@ export default function EventPage({ params }: { params: { id: string } }) {
                       Schedule
                     </TabsTrigger>
                     <TabsTrigger
-                      value="speakers"
+                      value="organizer"
                       className="rounded-none border-b-2 border-transparent px-4 py-2 data-[state=active]:border-primary"
                     >
-                      Speakers
+                      Organizer
                     </TabsTrigger>
                     <TabsTrigger
                       value="faq"
@@ -116,19 +239,25 @@ export default function EventPage({ params }: { params: { id: string } }) {
                   <TabsContent value="about" className="pt-6">
                     <div className="space-y-4">
                       <h2 className="text-2xl font-bold">About This Event</h2>
-                      <p className="text-muted-foreground">{eventDescription}</p>
+                      <p className="text-muted-foreground">{event.description}</p>
                       <p className="text-muted-foreground">
                         This event is open to all students, regardless of experience level. Whether you're a beginner or
                         an expert, you'll find value in this event. We encourage collaboration, learning, and
                         innovation.
                       </p>
+                      {event.additionalInfo && (
+                        <div>
+                          <h3 className="text-xl font-bold mt-6">Additional Information</h3>
+                          <p className="text-muted-foreground">{event.additionalInfo}</p>
+                        </div>
+                      )}
                       <h3 className="text-xl font-bold mt-6">What You'll Learn</h3>
                       <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
                         <li>
                           Practical skills in{" "}
-                          {id % 3 === 0
+                          {event.eventType === 'hackathon'
                             ? "problem-solving and teamwork"
-                            : id % 3 === 1
+                            : event.eventType === 'workshop'
                               ? "web development and design"
                               : "AI and machine learning"}
                         </li>
@@ -150,40 +279,43 @@ export default function EventPage({ params }: { params: { id: string } }) {
                       <div className="space-y-6">
                         <div className="relative pl-6 border-l border-muted">
                           <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-primary"></div>
-                          <h3 className="text-lg font-semibold">10:00 AM - Registration & Welcome</h3>
+                          <h3 className="text-lg font-semibold">{event.schedule.startTime} - Registration & Welcome</h3>
                           <p className="text-sm text-muted-foreground">
                             Check-in, get your badge, and enjoy some refreshments
                           </p>
                         </div>
                         <div className="relative pl-6 border-l border-muted">
                           <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-primary"></div>
-                          <h3 className="text-lg font-semibold">10:30 AM - Opening Keynote</h3>
+                          <h3 className="text-lg font-semibold">Opening Keynote</h3>
                           <p className="text-sm text-muted-foreground">Introduction to the event and keynote speech</p>
                         </div>
                         <div className="relative pl-6 border-l border-muted">
                           <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-primary"></div>
                           <h3 className="text-lg font-semibold">
-                            11:30 AM - {id % 3 === 0 ? "Team Formation" : "Workshop Session 1"}
+                            {event.eventType === 'hackathon' ? "Team Formation" : "Workshop Session 1"}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {id % 3 === 0 ? "Form teams and brainstorm ideas" : "First hands-on session"}
+                            {event.eventType === 'hackathon' ? "Form teams and brainstorm ideas" : "First hands-on session"}
                           </p>
                         </div>
                         <div className="relative pl-6 border-l border-muted">
                           <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-primary"></div>
-                          <h3 className="text-lg font-semibold">1:00 PM - Lunch Break</h3>
+                          <h3 className="text-lg font-semibold">Lunch Break</h3>
                           <p className="text-sm text-muted-foreground">Networking lunch provided for all attendees</p>
                         </div>
                         <div className="relative pl-6 border-l border-muted">
                           <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-primary"></div>
                           <h3 className="text-lg font-semibold">
-                            2:00 PM -{" "}
-                            {id % 3 === 0 ? "Hacking Begins" : id % 3 === 1 ? "Workshop Session 2" : "Panel Discussion"}
+                            {event.eventType === 'hackathon' 
+                              ? "Hacking Begins" 
+                              : event.eventType === 'workshop' 
+                                ? "Workshop Session 2" 
+                                : "Panel Discussion"}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {id % 3 === 0
+                            {event.eventType === 'hackathon'
                               ? "Start working on your projects"
-                              : id % 3 === 1
+                              : event.eventType === 'workshop'
                                 ? "Second hands-on session"
                                 : "Industry experts discuss current trends"}
                           </p>
@@ -191,58 +323,66 @@ export default function EventPage({ params }: { params: { id: string } }) {
                         <div className="relative pl-6 border-l border-muted">
                           <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-primary"></div>
                           <h3 className="text-lg font-semibold">
-                            4:00 PM - {id % 3 === 0 ? "Mentoring Sessions" : "Q&A Session"}
+                            {event.eventType === 'hackathon' ? "Mentoring Sessions" : "Q&A Session"}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {id % 3 === 0
+                            {event.eventType === 'hackathon'
                               ? "Get help from industry mentors"
                               : "Ask questions and get answers from experts"}
                           </p>
                         </div>
                         <div className="relative pl-6">
                           <div className="absolute -left-1.5 top-1.5 h-3 w-3 rounded-full bg-primary"></div>
-                          <h3 className="text-lg font-semibold">5:30 PM - Closing Remarks & Networking</h3>
+                          <h3 className="text-lg font-semibold">{event.schedule.endTime} - Closing Remarks & Networking</h3>
                           <p className="text-sm text-muted-foreground">Wrap-up and informal networking</p>
                         </div>
                       </div>
                     </div>
                   </TabsContent>
-                  <TabsContent value="speakers" className="pt-6">
+                  <TabsContent value="organizer" className="pt-6">
                     <div className="space-y-4">
-                      <h2 className="text-2xl font-bold">Speakers & Presenters</h2>
-                      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {[1, 2, 3].map((i) => (
-                          <Card key={i}>
-                            <CardHeader className="pb-2">
-                              <div className="flex items-center gap-4">
-                                <Avatar className="h-12 w-12">
-                                  <AvatarImage src={`/placeholder.svg?height=48&width=48&text=${i}`} />
-                                  <AvatarFallback>SP</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <CardTitle className="text-lg">{`Speaker ${i}`}</CardTitle>
-                                  <CardDescription>
-                                    {i === 1
-                                      ? "CTO at TechCorp"
-                                      : i === 2
-                                        ? "Professor at MIT"
-                                        : "Lead Developer at StartupX"}
-                                  </CardDescription>
-                                </div>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm text-muted-foreground">
-                                {i === 1
-                                  ? "Expert in cloud computing and distributed systems with over 10 years of industry experience."
-                                  : i === 2
-                                    ? "Researcher in artificial intelligence and machine learning, focusing on natural language processing and computer vision applications."
-                                    : "Full-stack developer specializing in web technologies and mobile app development with a passion for teaching."}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
+                      <h2 className="text-2xl font-bold">Event Organizer</h2>
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={`/placeholder.svg?height=48&width=48&text=${event.organizer.name.charAt(0)}`} />
+                              <AvatarFallback>{event.organizer.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <CardTitle className="text-lg">{event.organizer.name}</CardTitle>
+                              <CardDescription>
+                                {event.organizer.collegeName}
+                              </CardDescription>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Contact: {event.organizer.email}
+                            {event.organizer.phone && `, ${event.organizer.phone}`}
+                          </p>
+                          {event.organizer.website && (
+                            <p className="text-sm text-muted-foreground">
+                              Website: <a href={event.organizer.website} className="text-primary hover:underline">{event.organizer.website}</a>
+                            </p>
+                          )}
+                          {event.organizer.socialMedia && (
+                            <div className="mt-2 flex gap-2">
+                              {event.organizer.socialMedia.instagram && (
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={`https://instagram.com/${event.organizer.socialMedia.instagram}`}>Instagram</a>
+                                </Button>
+                              )}
+                              {event.organizer.socialMedia.twitter && (
+                                <Button variant="outline" size="sm" asChild>
+                                  <a href={`https://twitter.com/${event.organizer.socialMedia.twitter}`}>Twitter</a>
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
                     </div>
                   </TabsContent>
                   <TabsContent value="faq" className="pt-6">
@@ -297,32 +437,33 @@ export default function EventPage({ params }: { params: { id: string } }) {
                       <Calendar className="mt-0.5 h-5 w-5 text-muted-foreground" />
                       <div>
                         <h3 className="font-medium">Date & Time</h3>
-                        <p className="text-sm text-muted-foreground">{eventDate}</p>
-                        <p className="text-sm text-muted-foreground">{eventTime}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(event.schedule.startDate)}</p>
+                        <p className="text-sm text-muted-foreground">{`${event.schedule.startTime} - ${event.schedule.endTime}`}</p>
+                        <p className="text-sm text-muted-foreground">{event.schedule.timezone}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <MapPin className="mt-0.5 h-5 w-5 text-muted-foreground" />
                       <div>
                         <h3 className="font-medium">Location</h3>
-                        <p className="text-sm text-muted-foreground">{eventLocation}</p>
-                        <p className="text-sm text-muted-foreground">Room 302, Computer Science Building</p>
-                        <Button variant="link" size="sm" className="h-auto p-0 text-sm">
-                          View Map
-                        </Button>
+                        <p className="text-sm text-muted-foreground">{event.venue?.name || "Online Event"}</p>
+                        {event.venue && (
+                          <>
+                            <p className="text-sm text-muted-foreground">{event.venue.address}</p>
+                            <p className="text-sm text-muted-foreground">{`${event.venue.city}, ${event.venue.state}, ${event.venue.country}`}</p>
+                            <Button variant="link" size="sm" className="h-auto p-0 text-sm">
+                              View Map
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <Users className="mt-0.5 h-5 w-5 text-muted-foreground" />
                       <div>
                         <h3 className="font-medium">Organizer</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {id % 3 === 0
-                            ? "Tech Innovation Club"
-                            : id % 3 === 1
-                              ? "Web Development Society"
-                              : "AI Research Group"}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{event.organizer.name}</p>
+                        <p className="text-sm text-muted-foreground">{event.organizer.collegeName}</p>
                         <Button variant="link" size="sm" className="h-auto p-0 text-sm">
                           View Profile
                         </Button>
@@ -338,32 +479,32 @@ export default function EventPage({ params }: { params: { id: string } }) {
                     <CardTitle>Similar Events</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <Link href={`/events/${id + i}`} key={`similar-${i}`} className="flex gap-3 group">
-                        <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
-                          <Image
-                            src={`/placeholder.svg?height=64&width=64&text=${id + i}`}
-                            width={64}
-                            height={64}
-                            alt={`Event ${id + i}`}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium group-hover:text-primary line-clamp-1">
-                            {(id + i) % 3 === 0
-                              ? `Hack the Future ${id + i}`
-                              : (id + i) % 3 === 1
-                                ? `Web Dev Workshop ${id + i}`
-                                : `AI Revolution Talk ${id + i}`}
-                          </h4>
-                          <p className="text-xs text-muted-foreground">{`${10 + id + i} Mar, 2024`}</p>
-                          <Badge variant="outline" className="mt-1 text-xs">
-                            {(id + i) % 3 === 0 ? "Hackathon" : (id + i) % 3 === 1 ? "Workshop" : "Tech Talk"}
-                          </Badge>
-                        </div>
-                      </Link>
-                    ))}
+                    {similarEvents.length > 0 ? (
+                      similarEvents.map((similarEvent) => (
+                        <Link href={`/events/${similarEvent._id}`} key={similarEvent._id} className="flex gap-3 group">
+                          <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                            <Image
+                              src={similarEvent.imageUrl || `/placeholder.svg?height=64&width=64&text=${encodeURIComponent(similarEvent.title)}`}
+                              width={64}
+                              height={64}
+                              alt={similarEvent.title}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium group-hover:text-primary line-clamp-1">
+                              {similarEvent.title}
+                            </h4>
+                            <p className="text-xs text-muted-foreground">{formatDate(similarEvent.schedule.startDate)}</p>
+                            <Badge variant={getBadgeVariant(similarEvent.eventType)} className="mt-1 text-xs">
+                              {similarEvent.eventType}
+                            </Badge>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No similar events found</p>
+                    )}
                   </CardContent>
                 </Card>
               </div>

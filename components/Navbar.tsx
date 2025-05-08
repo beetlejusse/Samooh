@@ -49,9 +49,7 @@ export function Navbar() {
     const fetchUser = async () => {
       try {
         const res = await axios.get("/api/fetchUser");
-        setUser(res.data.user);
-        console.log("User data fetched:", res.data.user);
-        console.log("helllo");
+        setUser(res.data.user);;
       } catch (error) {
         console.error("Failed to fetch user", error);
       }

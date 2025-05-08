@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -11,16 +11,104 @@ import {
   Sparkles,
   Users,
   Clock,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomCard } from "@/components/custom-card";
-import { featuredEvents } from "@/sample-data/featuredEvent";
 import { FeatureCard } from "@/components/FeatureCard";
 import { TestimonialCard } from "@/components/TestimonialCard";
 import SvgComponent from "@/svgs/svgComp";
+import { Badge } from "@/components/ui/badge";
+
+interface Event {
+  _id: string;
+  title: string;
+  eventType: 'hackathon' | 'workshop' | 'tech-talk' | 'networking' | 'conference' | 'other';
+  description: string;
+  format: 'in-person' | 'virtual' | 'hybrid';
+  imageUrl: string;
+  tags: string[];
+  venue?: {
+    name: string;
+    city: string;
+    state: string;
+    country: string;
+  };
+  schedule: {
+    startDate: string;
+    endDate: string;
+    startTime: string;
+    endTime: string;
+    timezone: string;
+  };
+  organizer: {
+    name: string;
+    collegeName: string;
+  };
+}
 
 export default function Home() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    setLoading(true);
+    try {
+      // Fetch featured events (limit to 3)
+      const response = await fetch('/api/fetchEvents?limit=3&sortBy=recent');
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setEvents(data.events);
+      } else {
+        console.error("Failed to fetch events:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Implement search functionality if needed
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+  };
+
+  const getBadgeVariant = (eventType: string): "default" | "secondary" | "outline" | "destructive" => {
+    switch (eventType) {
+      case 'hackathon':
+        return 'default';
+      case 'workshop':
+        return 'secondary';
+      case 'tech-talk':
+        return 'outline';
+      case 'networking':
+        return 'destructive';
+      case 'conference':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1">
@@ -94,7 +182,7 @@ export default function Home() {
                 <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-violet-500 rounded-2xl blur-md opacity-20"></div>
                 <div className="relative rounded-2xl overflow-hidden border border-white/50 shadow-xl">
                   <Image
-                    src="/placeholder.svg?height=600&width=600&text=College+Events"
+                    src="https://i.ibb.co/zTKBn7bg/smart-india-hackathon-3-scaled.jpg"
                     width={600}
                     height={600}
                     alt="College Events"
@@ -149,6 +237,8 @@ export default function Home() {
                       type="search"
                       placeholder="Search events, workshops, hackathons..."
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-400"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                   <Button className="rounded-full bg-gradient-to-r from-pink-500 to-violet-500 text-white border-0 hover:shadow-lg hover:shadow-pink-500/20 transition-all">
@@ -161,7 +251,12 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-full border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  className={`rounded-full ${
+                    selectedCategory === "all" 
+                      ? "bg-pink-50 text-pink-600 border-pink-200" 
+                      : "border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  }`}
+                  onClick={() => setSelectedCategory("all")}
                 >
                   <Filter className="h-3.5 w-3.5 mr-1" />
                   All Events
@@ -169,28 +264,48 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-full border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  className={`rounded-full ${
+                    selectedCategory === "hackathon" 
+                      ? "bg-pink-50 text-pink-600 border-pink-200" 
+                      : "border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  }`}
+                  onClick={() => setSelectedCategory("hackathon")}
                 >
                   Hackathons
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-full border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  className={`rounded-full ${
+                    selectedCategory === "workshop" 
+                      ? "bg-pink-50 text-pink-600 border-pink-200" 
+                      : "border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  }`}
+                  onClick={() => setSelectedCategory("workshop")}
                 >
                   Workshops
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-full border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  className={`rounded-full ${
+                    selectedCategory === "tech-talk" 
+                      ? "bg-pink-50 text-pink-600 border-pink-200" 
+                      : "border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  }`}
+                  onClick={() => setSelectedCategory("tech-talk")}
                 >
                   Tech Talks
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="rounded-full border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  className={`rounded-full ${
+                    selectedCategory === "networking" 
+                      ? "bg-pink-50 text-pink-600 border-pink-200" 
+                      : "border-pink-100 text-gray-600 hover:bg-pink-50 hover:text-pink-600"
+                  }`}
+                  onClick={() => setSelectedCategory("networking")}
                 >
                   Networking
                 </Button>
@@ -220,27 +335,68 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredEvents.map((event) => (
-                <CustomCard
-                  key={event.id}
-                  id={event.id}
-                  title={event.title}
-                  description={event.description}
-                  image={event.image}
-                  date={event.date}
-                  location={event.location}
-                  attendees={event.attendees}
-                  category={event.category}
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {events.length > 0 ? (
+                  events.map((event) => (
+                    <Link href={`/events/${event._id}`} key={event._id} className="group">
+                      <div className="overflow-hidden transition-all hover:shadow-md rounded-xl border border-gray-200">
+                        <div className="aspect-video w-full overflow-hidden">
+                          <Image
+                            src={event.imageUrl || `/placeholder.svg?height=300&width=500&text=${encodeURIComponent(event.title)}`}
+                            width={500}
+                            height={300}
+                            alt={event.title}
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={getBadgeVariant(event.eventType)}>
+                              {event.eventType}
+                            </Badge>
+                            <Badge variant="outline" className="ml-auto">
+                              {formatDate(event.schedule.startDate)}
+                            </Badge>
+                          </div>
+                          <h3 className="line-clamp-1 text-xl font-semibold mt-2">
+                            {event.title}
+                          </h3>
+                          <p className="line-clamp-2 text-gray-600 mt-1">
+                            {event.description}
+                          </p>
+                          <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3.5 w-3.5" />
+                              <span>{event.venue?.name || event.venue?.city || "Online"}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span>{formatDate(event.schedule.startDate)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12">
+                    <h3 className="text-xl font-medium">No events found</h3>
+                    <p className="text-gray-500 mt-2">Check back later for upcoming events</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
         <section className="py-16 md:py-24 bg-gradient-to-br from-pink-50 via-white to-purple-50">
           <div className="container px-4 md:px-6">
-            <div className="text-center mb-110">
+            <div className="text-center mb-10">
               <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-violet-600 bg-clip-text text-transparent mb-4">
                 Why Join Samooh?
               </h2>
@@ -345,7 +501,7 @@ export default function Home() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="rounded-lg border-white text-pink-600 hover:bg-white/90 hover:text-pink-600 px-4 py-4 h-auto text-base"
+                    className="rounded-lg border-white text-white hover:bg-white/10 px-4 py-4 h-auto text-base"
                   >
                     <Link href="/events">Browse Events</Link>
                   </Button>
